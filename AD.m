@@ -38,14 +38,13 @@ classdef AD
         %       
             
         function obj = minus(a,b)
-            obj = plus(a,-b);
-%             if(~isa(a,'AD') && isa(b,'AD'))
-%                 obj = AD( a  - b.x, b.dx );
-%             elseif(isa(a,'AD') && ~isa(b,'AD'))
-%                 obj = AD( a.x  - b, a.dx );
-%             else
-%                 obj = AD( a.x - b.x, a.dx - b.dx );
-%             end
+            if(~isa(a,'AD') && isa(b,'AD'))
+                obj = AD( a  - b.x, b.dx );
+            elseif(isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x  - b, a.dx );
+            else
+                obj = AD( a.x - b.x, a.dx - b.dx );
+            end
         end
         
         function obj = plus(a,b)
@@ -53,7 +52,7 @@ classdef AD
                 obj = AD( a  + b.x, b.dx );
             elseif(isa(a,'AD') && ~isa(b,'AD'))
                 obj = AD( a.x  + b, a.dx );
-            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+            else
                 obj = AD( a.x  + b.x, a.dx + b.dx );
             end
         end
@@ -63,7 +62,7 @@ classdef AD
                 obj = AD( a.*b.x, a.*b.dx );
             elseif(isa(a,'AD') && ~isa(b,'AD'))
                 obj = AD( a.x.*b, a.dx.*b );
-            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+            else
                 obj = AD( a.x.*b.x, a.x.*b.dx + a.dx.*b.x );
             end
         end
@@ -73,7 +72,7 @@ classdef AD
                 obj = AD( a.*b.x, a.*b.dx );
             elseif(isa(a,'AD') && ~isa(b,'AD'))
                 obj = AD( a.x.*b, a.dx.*b );
-            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+            else
                 obj = AD( a.x.*b.x, a.x.*b.dx + a.dx.*b.x );
             end
         end
@@ -93,7 +92,7 @@ classdef AD
             elseif(isa(a,'AD') && ~isa(b,'AD'))
                 obj = AD(a.x.^b, ...
                        (b.*a.x.^(b-1)).* a.dx);
-            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+            else
                 obj = AD( a.x.^b.x,  ...
                   (b.x.*a.x).^(b.x-1)*a.dx + a.x.^b.x .*b.dx * log(a.x) );
             end
@@ -107,7 +106,7 @@ classdef AD
             elseif(isa(a,'AD') && ~isa(b,'AD'))
                 obj = AD(a.x.^b, ...
                        (b.*a.x.^(b-1)).* a.dx);
-            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+            else
                 obj = AD( a.x.^b.x,  ...
                   (b.x.*a.x).^(b.x-1)*a.dx + a.x.^b.x .*b.dx * log(a.x) );
             end
