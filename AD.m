@@ -112,6 +112,22 @@ classdef AD
             end
         end        
         
+        function obj = log(a)
+           obj = AD(log(a.x), 1./(a.x.*a.dx));
+        end
+        
+        %
+        % 
+        %
+        function obj = sqrt(a)
+            a.x
+            obj = AD((a.x).^0.5,a.dx./(2*sqrt(a.x)));
+        end
+        
+        function obj = exp(a)
+            obj = AD(exp(a.x),a.dx.*exp(a.x));
+            
+        end
         
         function obj = transpose(a)
             obj = AD( transpose(a.x), transpose(a.dx) );  
@@ -140,6 +156,9 @@ classdef AD
         function obj = acsc(a)
             obj = AD( acsc(a.x), -a.dx./(a.x.*sqrt(a.x.^2-1)) );
         end
+        function obj = cos(a)
+          obj = AD( cos(a.x), -sin(a.x).*a.dx );
+        end
         
         function obj = sec(a)
           v   = sec(a.x);
@@ -165,10 +184,6 @@ classdef AD
 
         function obj = tanh(a)
           obj = AD( tanh(a.x), (sech(a.x).^2).*a.dx );
-        end
-        
-        function obj = log(a)
-           obj = AD(log(a.x), 1./(a.x.*a.dx));
         end
         
         %
