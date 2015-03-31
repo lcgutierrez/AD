@@ -13,41 +13,69 @@ classdef AD
         % Constructor
         %   Possibilities:
         %       - AD()
-        %       - AD(10)
-        %       - AD(X) //x is an AD object
-        %       - AD(10,0)
+        %       - AD(10) // A constant
+        %       - AD(X) // x is an AD object
+        %       - AD(10,0) // A value, with the value of the derivative
         %
 
-        function obj = AD(c,dx)
+        function obj = AD(x,dx)
             if( nargin == 0)
                 obj.x=0;
                 obj.dx=0;
             elseif ( nargin==1 )
-                obj.x= c;
-                obj.dx= 0*c;
-            elseif(isa(c,'AD'))
-                obj=c;
+                obj.x= x;
+                obj.dx= eye(length(x));
+            elseif(isa(x,'AD'))
+                obj=x;
             elseif( nargin == 2)
-                obj.x=c;
+                obj.x=x;
                 obj.dx=dx;
             end
         end
         
         %
         % Basic Operators:
-        %
         %       
             
         function obj = minus(a,b)
-            obj = AD( a.x - b.x, a.dx - b.dx );
+            obj = plus(a,-b);
+%             if(~isa(a,'AD') && isa(b,'AD'))
+%                 obj = AD( a  - b.x, b.dx );
+%             elseif(isa(a,'AD') && ~isa(b,'AD'))
+%                 obj = AD( a.x  - b, a.dx );
+%             else
+%                 obj = AD( a.x - b.x, a.dx - b.dx );
+%             end
         end
         
         function obj = plus(a,b)
-            obj = AD( a.x  + b.x, a.dx + b.dx );
+            if(~isa(a,'AD') && isa(b,'AD'))
+                obj = AD( a  + b.x, b.dx );
+            elseif(isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x  + b, a.dx );
+            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x  + b.x, a.dx + b.dx );
+            end
         end
         
         function obj = times(a,b)
-            obj = AD( a.x.*b.x, a.x.*b.dx + a.dx.*b.x );
+            if(~isa(a,'AD') && isa(b,'AD'))
+                obj = AD( a.*b.x, a.*b.dx );
+            elseif(isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x.*b, a.dx.*b );
+            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x.*b.x, a.x.*b.dx + a.dx.*b.x );
+            end
+        end
+        
+        function obj = mtimes(a,b)
+            if(~isa(a,'AD') && isa(b,'AD'))
+                obj = AD( a.*b.x, a.*b.dx );
+            elseif(isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x.*b, a.dx.*b );
+            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x.*b.x, a.x.*b.dx + a.dx.*b.x );
+            end
         end
         
         function obj = uminus(a)
@@ -58,6 +86,34 @@ classdef AD
             obj = a;
         end
         
+        function obj = power(a,b)
+            if(~isa(a,'AD') && isa(b,'AD'))
+                obj = AD(a.^b.x , ...
+                        (a.^b.x.*log(a) ).* b.dx);
+            elseif(isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD(a.x.^b, ...
+                       (b.*a.x.^(b-1)).* a.dx);
+            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x.^b.x,  ...
+                  (b.x.*a.x).^(b.x-1)*a.dx + a.x.^b.x .*b.dx * log(a.x) );
+            end
+        end
+
+        
+        function obj = mpower(a,b)
+            if(~isa(a,'AD') && isa(b,'AD'))
+                obj = AD(a.^b.x , ...
+                        (a.^b.x.*log(a) ).* b.dx);
+            elseif(isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD(a.x.^b, ...
+                       (b.*a.x.^(b-1)).* a.dx);
+            elseif(~isa(a,'AD') && ~isa(b,'AD'))
+                obj = AD( a.x.^b.x,  ...
+                  (b.x.*a.x).^(b.x-1)*a.dx + a.x.^b.x .*b.dx * log(a.x) );
+            end
+        end        
+        
+        
         function obj = transpose(a)
             obj = AD( transpose(a.x), transpose(a.dx) );  
         end
@@ -65,8 +121,6 @@ classdef AD
         %
         % Trigonometric Functions
         %
-        %
-        
         
         function obj = acos(a)
             obj = AD( acos(a.x), -a.dx./sqrt(1-a.x.^2) );
@@ -85,7 +139,7 @@ classdef AD
         end
         
         function obj = acsc(a)
-            obj = AD( acsc(a.x), -a.dx./( a.x.*sqrt(a.x.^2-1) ) );
+            obj = AD( acsc(a.x), -a.dx./(a.x.*sqrt(a.x.^2-1)) );
         end
         
         function obj = sec(a)
@@ -93,37 +147,45 @@ classdef AD
           obj = AD( v, v.*tan(a.x).*a.dx );
         end
 
-        function obj = sech(c)
-          v   = sech(c.x);
-          obj = Deriv( v, -tanh(c.x).*v.*c.dx );
+        function obj = sech(a)
+          v   = sech(a.x);
+          obj = AD( v, -tanh(a.x).*v.*a.dx );
         end
 
-        function obj = sin(c)
-          obj = Deriv( sin(c.x), cos(c.x).*c.dx );
+        function obj = sin(a)
+          obj = AD( sin(a.x), cos(a.x).*a.dx );
         end
 
-        function obj = sinh(c)
-          obj = Deriv( sinh(c.x), cosh(c.x).*c.dx );
+        function obj = sinh(a)
+          obj = AD( sinh(a.x), cosh(a.x).*a.dx );
         end
 
-        function obj = tan(c)
-          obj = Deriv( tan(c.x), (sec(c.x).^2).*c.dx );
+        function obj = tan(a)
+          obj = AD( tan(a.x), (sec(a.x).^2).*a.dx );
         end
 
-        function obj = tanh(c)
-          obj = Deriv( tanh(c.x), (sech(c.x).^2).*c.dx );
+        function obj = tanh(a)
+          obj = AD( tanh(a.x), (sech(a.x).^2).*a.dx );
         end
         
+        function obj = log(a)
+           obj = AD(log(a.x), 1./(a.x.*a.dx));
+        end
         
         %
         % Misc. Functions
         %
-        %
-
+        
+        function sub  = subsref(a,s)
+            sub = AD(a.x(s.subs{1}), a.dx(s.subs{1},:));
+        end
+        
         function [] = disp(c)
+            fprintf('x : \n');
+            fprintf([repmat('%f\t', 1, size(c.x, 2)) '\n'], c.x)
             fprintf('\n')
-            fprintf(' x : %f \n',c.x);
-            fprintf('dx : %f \n',c.dx);
+            fprintf('dx : \n');
+            fprintf([repmat('%f\t', 1, size(c.dx, 2)) '\n'], c.dx)
             fprintf('\n')
         end
     end
