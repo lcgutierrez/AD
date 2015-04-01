@@ -116,6 +116,11 @@ classdef AD
            obj = AD(log(a.x), 1./(a.x.*a.dx));
         end
         
+        function obj = sum(a)
+            obj = AD(sum(a.x),sum(a.dx));
+        end
+        
+        
         %
         % 
         %
@@ -190,17 +195,59 @@ classdef AD
         % Misc. Functions
         %
         
-        function sub  = subsref(a,s)
+        function sub = subsref(a,s)
             sub = AD(a.x(s.subs{1}), a.dx(s.subs{1},:));
+        end
+        
+        function a = subsasgn(a,s,b)
+            %
+            % TODO : Throw error when a matrix is given
+            %
+            
+            
+            % Creating a new AD object
+            if(~isa(a,'AD') && isa(b,'AD')) 
+                a = AD();
+                a.x = b.x;
+                a.dx = b.dx;
+            elseif(isa(a,'AD') && ~isa(b,'AD'))
+                b = AD(b,zeros(1,size(a.dx,2)));
+                a.x(s.subs{1}) = b.x;
+                b.dx(s.subs{1})=1;
+                a.dx(s.subs{1},:) = b.dx;
+                a.x = b.x;
+                a.dx = b.dx;
+            else
+                if(length(a.x)<s.subs{1})
+                    %if adding new row
+                    a.x = [a.x b.x];
+                    a.dx = [a.dx ; b.dx];
+                else
+                    a.x(s.subs{1}) = b.x;
+                    a.dx(s.subs{1},:) = b.dx;
+                end
+            end
+        end
+        
+        function n = length(a)
+            n = length(a.x);
+        end
+        
+        function x = getx(a)
+           x = a.x; 
+        end
+        
+        function dx = getdx(a)
+           dx = a.dx; 
         end
         
         function [] = disp(c)
             fprintf('x : \n');
-            fprintf([repmat('%f\t', 1, size(c.x, 2)) '\n'], c.x)
-            fprintf('\n')
+            fprintf([repmat('%f\t', 1, size(c.x, 2)) '\n'], c.x);
+            fprintf('\n');
             fprintf('dx : \n');
-            fprintf([repmat('%f\t', 1, size(c.dx, 2)) '\n'], c.dx)
-            fprintf('\n')
+            fprintf([repmat('%f\t', 1, size(c.dx, 2)) '\n'], c.dx);
+            fprintf('\n');
         end
     end
     
